@@ -251,11 +251,187 @@ fun {FastPascal N}
     C:=@C+1
     {GenericPascal Add N}
 end
-
+{Browse {FastPascal 30}}
 
 % 1.13 オブジェクト
-% 1.14 クラス
-% 1.15 非決定性と時間
-% 1.16 原子性
-% 1.17 ここからどこへ行くのか?
+%
+% 内部メモリを持つ関数をオブジェクトと呼ぶ
+% BumpとReadが出来るオブジェクトを実装する
 
+declare
+% localは新しい変数を宣言するが、endまでの間でしか利用できない
+local C in
+   C={NewCell 0}
+   fun {Bump}
+      C:=@C+1
+      @C
+   end
+   fun {Read}
+      @C
+   end
+end
+{Browse {Bump}}
+{Browse {Bump}}
+% 実行する度にカウントが増えるのがわかる
+% BumpをFastPascalでも利用してみる
+declare
+fun {FastPascal N}
+   %  C:=@C+1 だったところを修正
+   {Browse {Bump}}
+   {GenericPascal Add N}
+end
+
+% 1.14 クラス
+%
+% 複数のカウンタが必要なら、カウンタを生産できる工場を作ろう
+declare
+fun {NewCounter}
+   C Bump Read in
+   C={NewCell 0}
+   fun {Bump}
+      C:=@C+1
+      @C
+   end
+   fun {Read}
+      @C
+   end
+   % ラベルcountと、bumpとreadの2つのフィールドを持つレコードを返す
+   counter(bump:Bump read:Read)
+end
+
+% 2つのカウンターを生成する
+declare
+Ctr1={NewCounter}
+Ctr2={NewCounter}
+% ドット演算子を用いて、Bump関数、Read関数にアクセスすることができる
+{Browse {Ctr1.bump}}
+{Browse {Ctr1.read}}
+{Browse {Ctr2.bump}}
+{Browse {Ctr2.read}}
+
+% オブジェクト指向プログラミングに向けて
+%
+% クラス内部で定義される操作はメソッドと呼ぶ
+% クラスを利用するといくらでもオブジェクトを生成できる
+% それらのオブジェクトは同じメソッドを共有するが、
+% 内部メモリはオブジェクトごとに別々である
+% クラスとオブジェクトを用いてプログラミングすることをオブジェクトベースプログラミングと呼ぶ
+% さらに継承を導入するとオブジェクト指向プログラミングになる
+% 継承:
+% 既存のクラスとの違いを記述するだけで、既存のクラスから新しいクラスを定義すること
+% 詳細は7章で
+
+
+% 1.15 非決定性と時間
+%
+% プログラムに並列性と明示的状態を同時に加えるとどうなるか?
+% スレッドが明示的状態にアクセスする順序が実行のたびに違うと違う結果を出すことがあるので危険だ
+% このように一定しないことを非決定性という(nondeterminism)
+% 基本操作が実行される正確な時刻をわれわれが知らないから、非決定性は生じる
+% スレッドが独立である以上、防ぐことはできない
+% すでに並列性において、非決定性は出てきている。
+% 非決定性そのものが問題ではない
+% 非決定性が観測可能になると、困難が生じる
+% => 観測可能な非決定性は競合条件と言われることがある
+declare
+C={NewCell 0}
+thread
+   C:=1
+end
+thread
+   C:=2
+end
+% ここでBrowseすると、0,1,2のどれかになる可能性がある
+{Browse @C}
+
+% もっと厄介な例
+declare
+C={NewCell 0}
+thread I in
+   I=@C
+   C:=I+1
+end
+thread J in
+   J=@C
+   C:=J+1
+end
+% 2が出力されるが、各スレッドでの@C参照が同時であれば、1になる可能性もある?
+{Browse @C}
+
+% インタリーブ
+%
+% スレッドの実行はインタリーブされる(交互に少しずつ実行される)ので上記の結果が1になる事もあり得る
+% Iへの代入>Jへの代入>Cへの代入
+% という順序で実行されるとどちらのCも1になってしまう
+
+% 1.16 原子性
+%
+% 原子的操作を用いると並列性と明示的状態を一緒に利用することが容易になる
+% 原子的操作を構築するために、ロックという新しい言語実態を導入する
+% ロックには内側と外側があり、プログラマは内側の命令を定義する
+% ロックにはその内部を実行できるスレッドは一時に1つという性質があるので、
+% 別のスレッドが内部に入ろうとしても、最初のスレッドが出て行くまで待たされる
+% 故にロック内部で行われることは原子的である
+%
+% ロックに関する操作は2つ必要である
+% 1.ロックを生成するNewLock
+% 2.ロック L 内部を定義する lock L then ... end
+% これらを用いてカウンタの欠陥を修正できる
+
+declare
+C={NewCell 0}
+L={NewLock}
+thread
+   lock L then I in
+      %{Browse 1}
+      I=@C
+      C:=I+1
+      %{Browse 2}
+   end
+end
+thread
+   lock L then J in
+      %{Browse 3}
+      J=@C
+      C:=J+1
+      %{Browse 4}
+   end
+end
+{Browse @C}
+
+% どちらのスレッド本体も同じロックで守るべきである
+% さもないとインターリーブがやはり起きる
+% =>  (同一のロックでないと同じ内部の操作を制御できないから?)
+declare
+C={NewCell 0}
+L={NewLock}
+L2={NewLock}
+thread
+   lock L then I in
+      {Browse 1}
+      I=@C
+      C:=I+1
+      {Browse 2}
+   end
+end
+thread
+   lock L2 then J in
+      {Browse 3}
+      J=@C
+      C:=J+1
+      {Browse 4}
+   end
+end
+{Browse @C}
+{Browse @C}
+{Browse @C}
+{Browse @C}
+
+% 1.17 ここからどこへ行くのか?
+%
+% 宣言的モデル
+% 宣言的並列モデル
+% 宣言的遅延モデル
+% 状態ありモデル
+% オブジェクト指向モデル
+% 状態共有並列モデル
