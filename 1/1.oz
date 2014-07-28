@@ -225,3 +225,37 @@ thread {Delay 5000} X=99 end
 declare X in
 thread {Browse start} {Browse X*X} end
 {Delay 5000} X=99
+
+% 詳細は4章で
+
+% 1.12 明示的状態
+%
+% 関数が過去から学ぶためには、内部にメモリを持たせる必要がある(明示的状態)l
+% memory cell:
+%    memory cellとは何でも投げこめる箱のようなものである.
+%    プログラミングでの変数ではなく、値の別名に過ぎない
+% := セルに値を入れる
+% @  セルの値を読み出す
+
+% 例：初期内容0のセルCを生成し、内容に1を加え、表示する
+declare
+C={NewCell 0}
+C:=@C+1
+{Browse @C}
+
+% FastPascalにメモリセルを追加する
+% (FastPascalが何回呼ばれたかを数えさせる)
+declare
+C={NewCell 0}
+fun {FastPascal N}
+    C:=@C+1
+    {GenericPascal Add N}
+end
+
+
+% 1.13 オブジェクト
+% 1.14 クラス
+% 1.15 非決定性と時間
+% 1.16 原子性
+% 1.17 ここからどこへ行くのか?
+
