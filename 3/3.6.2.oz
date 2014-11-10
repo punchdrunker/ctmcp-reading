@@ -41,3 +41,48 @@ end
 {ForAll [1 2 3] MyProc2}
 
 % アキュムレータループ
+declare
+proc {ForAcc A B S P In ?Out}
+   proc {LoopUp C In ?Out}
+   Mid in
+      if C=<B then {P In C Mid} {LoopUp C+S Mid Out}
+      else In=Out end
+   end
+   proc {LoopDown C In ?Out}
+   Mid in
+      if C>=B then {P In C Mid} {LoopDown C+S Mid Out}
+      else In=Out end
+   end
+in
+   if S>0 then {LoopUp A In Out} end
+   if S<0 then {LoopDown A In Out} end
+end
+proc {ForAllAcc L P In ?Out}
+   case L
+   of nil then In=Out
+   [] X|L2 then Mid in
+      {P In X Mid}
+      {ForAllAcc L2 P Mid Out}
+   end
+end
+
+% リストの挟み込み
+declare
+fun {FoldL L F U}
+   case L
+   of nil then U
+   [] X|L2 then
+      {FoldL L2 F {F U X}}
+   end
+end
+fun {FoldR L F U}
+   fun {Loop L U}
+      case L
+      of nil then U
+      [] X|L2 then
+	 {Loop L2 {F X U}}
+      end
+   end
+in
+   {Loop {Reverse L} U}
+end
