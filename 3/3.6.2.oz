@@ -1,4 +1,6 @@
 % 3.6.2 ループ抽象
+% 
+% 制御抽象を用いれば簡潔にループを定義できる
 
 % 整数ループ
 % Iを整数として{P I}を呼ぶ.
@@ -41,6 +43,7 @@ end
 {ForAll [1 2 3] MyProc2}
 
 % アキュムレータループ
+% 状態を保持するためにアキュムレータを追加し、ループを実装してみる
 declare
 proc {ForAcc A B S P In ?Out}
    proc {LoopUp C In ?Out}
@@ -57,16 +60,41 @@ in
    if S>0 then {LoopUp A In Out} end
    if S<0 then {LoopDown A In Out} end
 end
+% ForAccを実行してみる
+declare
+proc {MyProc3 In C ?Mid}
+   Mid=In+C
+end
+declare Hoge in
+{ForAcc 1 50 3 MyProc3 1 Hoge}
+{Browse Hoge}
+
+declare
 proc {ForAllAcc L P In ?Out}
    case L
    of nil then In=Out
    [] X|L2 then Mid in
       {P In X Mid}
+      %{Browse In}
       {ForAllAcc L2 P Mid Out}
    end
 end
+% 1を初期値としてリストの要素を全部掛けていく
+% ForAccを実行してみる
+declare
+proc {MyProc4 In C ?Mid}
+   Mid=In*C
+end
+declare Fuga in
+{ForAllAcc [1 3 5 7] MyProc4 1 Fuga}
+{Browse Fuga}
+
 
 % リストの挟み込み
+% リスト上のアキュムレータループは
+% 中間演算子をリストの要素で挟み込んでいると言う事もできる
+
+% 挟み込みの反復的定義
 declare
 fun {FoldL L F U}
    case L
@@ -75,14 +103,39 @@ fun {FoldL L F U}
       {FoldL L2 F {F U X}}
    end
 end
+declare
+fun {SumList L}
+   {FoldL L fun {$ X Y} X+Y end 0}
+end
+{Browse {SumList [1 2 5]}}
+
+declare
+fun {FoldR L F U}
+   {FoldL {Reverse L} F U}
+end
+declare
+fun {SumList L}
+   {FoldR L fun {$ X Y} X+Y end 0}
+end
+{Browse {SumList [1 2 5]}}
+
+
+declare
 fun {FoldR L F U}
    fun {Loop L U}
       case L
       of nil then U
       [] X|L2 then
+	 {Browse X#U}
 	 {Loop L2 {F X U}}
       end
    end
 in
    {Loop {Reverse L} U}
 end
+declare
+fun {SumList L}
+   {FoldR L fun {$ X Y} X+Y end 0}
+end
+%{SumList [1 2 5]}
+{Browse {SumList [1 2 5]}}
