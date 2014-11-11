@@ -23,7 +23,7 @@ declare
 proc {MyProc I}
    {Browse I}
 end
-{For 1 50 4 MyProc}
+{For 1 1 3 MyProc}
 
 
 % リストループ
@@ -48,7 +48,7 @@ declare
 proc {ForAcc A B S P In ?Out}
    proc {LoopUp C In ?Out}
    Mid in
-      if C=<B then {P In C Mid} {LoopUp C+S Mid Out}
+      if C=<B then {P In C Mid} {Browse In#C#Mid} {LoopUp C+S Mid Out}
       else In=Out end
    end
    proc {LoopDown C In ?Out}
@@ -75,7 +75,7 @@ proc {ForAllAcc L P In ?Out}
    of nil then In=Out
    [] X|L2 then Mid in
       {P In X Mid}
-      %{Browse In}
+      {Browse Mid}
       {ForAllAcc L2 P Mid Out}
    end
 end
@@ -100,6 +100,7 @@ fun {FoldL L F U}
    case L
    of nil then U
    [] X|L2 then
+      {Browse X}
       {FoldL L2 F {F U X}}
    end
 end
@@ -109,13 +110,14 @@ fun {SumList L}
 end
 {Browse {SumList [1 2 5]}}
 
+% FoldLを使ってみた
 declare
 fun {FoldR L F U}
-   {FoldL {Reverse L} F U}
+   {FoldL {Reverse L} fun {$ X Y} {F Y X} end U}
 end
 declare
 fun {SumList L}
-   {FoldR L fun {$ X Y} X+Y end 0}
+   {FoldR L fun {$ X Y} X-Y end 0}
 end
 {Browse {SumList [1 2 5]}}
 
@@ -135,7 +137,7 @@ in
 end
 declare
 fun {SumList L}
-   {FoldR L fun {$ X Y} X+Y end 0}
+   {FoldR L fun {$ X Y} X-Y end 0}
 end
 %{SumList [1 2 5]}
 {Browse {SumList [1 2 5]}}

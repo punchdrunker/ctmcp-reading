@@ -46,7 +46,7 @@ end
 
 % 実際に呼んでみる
 declare RS X1 X2 in
-{QuadraticEquation 1.0 3.0 2.0 RS X1 X2}
+{QuadraticEquation 1.0 ~3.0 2.0 RS X1 X2}
 {Browse RS#X1#X2}
 
 
@@ -54,7 +54,8 @@ declare RS X1 X2 in
 % 
 % CやPascalでは手続きを入れ子にできなかったり、変数のスコープが制限されたりして、
 % 多くの高階プログラミング技法が使えない
-% これは、文脈環境が宙ぶらりんの参照を持たないようにするため、手続き値の生成に制限を加えているせいだけど、
+% これは、文脈環境が宙ぶらりんの参照を持たないようにするため、
+% 手続き値の生成に制限を加えているせいだけど、
 % 手続き値の役割はオブジェクト指向言語によって実現可能
 
 
@@ -71,6 +72,7 @@ fun {SumList L}
    [] X|L1 then X+{SumList L1}
    end
 end
+{Browse {SumList [1 2 3]}}
 
 % nilだった場合の値0を整数U、演算子(+)を手続値Fとして、引数にすると
 % 汎用的な関数を作ることができる
@@ -101,7 +103,7 @@ declare
 fun {Some L}
    {FoldR L fun {$ X Y} X orelse Y end false}
 end
-{Browse {Some [false true]}}
+{Browse {Some [false false]}}
 
 
 % 汎用化したMergeSort
